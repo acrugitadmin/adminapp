@@ -1,11 +1,16 @@
 <template>
     <v-layout>
       <v-flex>
-        <v-row>
-          <v-col class="d-flex" cols="12" sm="6">
-            <h1 class="headline mt-5 font-weight-light">List Of Users Whose Subscription Has Expired</h1>
-          </v-col>
-        </v-row>
+        <v-row><v-col><h1 class="headline mt-5 font-weight-light">List Of Users Whose Subscription Has Expired</h1></v-col>
+          <v-col><div class="float-right ">
+            <vue-json-to-csv :json-data="values" csv-title="subscriptionexplist">
+            <v-btn
+              class="black white--text"
+              right
+            >Download CSV</v-btn>
+            </vue-json-to-csv>
+            </div></v-col>
+            </v-row>
   
         <div v-if="datapresent">
           <h3 class="mt-5 font-weight-light">
@@ -43,40 +48,22 @@
                   :headers="headers"
                   :items="values"
                   :search='search'
-            :page.sync="page"
-            :items-per-page="itemsPerPage"
-            :footer-props="{ 'items-per-page-options': [10, 200, -1] }"
-            class="elevation-1"
-            :loading="isLoading"
+                  :items-per-page="itemsPerPage"
+                  :footer-props="{ 'items-per-page-options': [10, 200, -1] }"
+                  class="elevation-1"
+                  :loading="isLoading"
+                  :page.sync="page"
+                  @page-count="pageCount = $event"
                 >
-                <template v-slot:item.first_name="{ item }">
-                  {{ item.first_name}} {{ item.last_name}}
+                <template v-slot:item.firstname="{ item }">
+                  {{ item.firstname}} {{ item.lastname}}
                 </template>
-                <template v-slot:item.is_active="{ item }">
-                  {{ checktype(item.is_active)}}
+                <template v-slot:item.subscription_expiry="{ item }">
+                  {{ convertDate2(item.subscription_expiry) }}
                 </template>
-                <template v-slot:item.mobile="{ item }">
-                  {{ checkifnull(item.mobile)}}
-                </template>
-                <template v-slot:item.user_role="{ item }">
-                  {{ capitalizeFirstLetter(item.user_role)}}
-                </template>
-                <template v-slot:item.edit="{ item }">
-                    <v-tooltip left>
-                      <template v-slot:activator="{ on }">
-                        <v-icon
-                          style="cursor: pointer;"
-                          v-on="on"
-                          @click="edituser(item)"
-                        >
-                        mdi-cloud-download
-                        </v-icon>
-                      </template>
-                      <span>Edit</span>
-                    </v-tooltip>
-                  </template>
                 </v-data-table>
           </v-card>
+
           <v-snackbar v-model="snackbar" :color="color" top>
             {{ text }}
           </v-snackbar>
@@ -85,25 +72,31 @@
 </template>
 
 <script>
+
+import VueJsonToCsv from 'vue-json-to-csv'
+import moment from 'moment'
+
     export default {
+
+      components: {
+        VueJsonToCsv,
+    },
+
       data() {
         return {
             isLoading: false,
-      values: [{"id":109,"email_id":"prashanth.232@gmail.com","user_role":"admin","partner_id":null,"date_added":"2021-02-09T07:42:39.206Z","is_active":true,"is_primary_user":false,"is_password_reset":true,"first_name":"Prashanth","last_name":"Kumar","mobile":"9980668008","address":"","token":null}],
+      values: [],
       valid: false,  
-      page: 0,
+      page: 1,
       pageCount: 0,
       itemsPerPage: 10,
         search: '',
         customfilter: 'TRUE',
       selected: [],
       headers: [
-        { text: 'Name', value: 'first_name', class: 'size', sortable: false },
-        { text: 'Mobile Number', value: 'mobile', class: 'size', sortable: false },
-        { text: 'Email', value: 'email_id', class: 'size', sortable: false },
-        { text: 'Role', value: 'user_role', class: 'size', sortable: false },
-        { text: 'User Status', value: 'is_active', class: 'size', sortable: false },
-        { text: 'Edit', value: 'edit', class: 'size', sortable: false },
+        { text: 'Name', value: 'firstname', class: 'size', sortable: false  },
+        { text: 'Mobile Number', value: 'mobile', class: 'size', sortable: false  },
+        { text: 'Subscription Exp.', value: 'subscription_expiry', class: 'size', sortable: false  },
       ],
       datapresent: true,
       nodata: false,
@@ -112,47 +105,79 @@
       snackbar: false,
             text: '',
             color: '',
-            allowedit: null
-            
+            allowedit: null,
+            totalPassengers: 0,
+            numberOfPages: 0,
+            options: {},
             }
         },
+
+  //       watch: {
+  //   options: {
+  //     handler() {
+  //       this.getUsers();
+  //     },
+  //   },
+  //   deep: true,
+  // },
+
+
         mounted() {
             this.check()
         },
         methods: {
             async check() {
-              this.allowedit = this.$store.state.sessionStorage.rbac.editUser
                 this.loaded = true
                 try {
         this.$axios.setHeader(
           'Authorization',
           'bearer ' + this.$store.state.sessionStorage.token
         )
-        const result = await this.$axios.$get('/admin/users/access/user/get/true')
-        this.values = result
+        const result = await this.$axios.$post('/admin/partner/user/expired/get/', {
+          offset: 0,
+          limit: 10000,
+          partner_code: 0,
+        })
+        this.values = result.data
         this.datapresent = false
+        this.totalPassengers = parseInt(result.records);
+        this.numberOfPages = result.pages;
       } catch (e) {
         console.log(e)
         this.nodata = true
         this.items = true
       }
             },
-            edituser(val) {
-                console.log(val)
-                if (this.allowedit == false) { 
-        this.snackbar = true
-        this.text = 'Sorry, You Do Not Have Permission To View This'
-        this.color = 'red'
-      } else { 
-                if(val.user_role == 'superadmin') {
-                  this.snackbar = true
-                  this.color = 'red'
-                  this.text = 'Can Not Edit For Superadmin'
-                }else{
-                this.$store.commit('sessionStorage/editUser', val)
-                this.$router.push({ path: '/edituser' })
+            async getUsers() {
+              console.log('called')
+              this.loaded = true
+              const { page, itemsPerPage } = this.options;
+              let pageNumber = page - 1;
+                console.log('page', this.page)
+                console.log('page number', pageNumber)
+                if(pageNumber == -1){
+                  pageNumber = 0
                 }
-              }
+                console.log('new pn', pageNumber)
+                try {
+        this.$axios.setHeader(
+          'Authorization',
+          'bearer ' + this.$store.state.sessionStorage.token
+        )
+        const result = await this.$axios.$post('/admin/partner/user/expired/get/', {
+          offset: pageNumber * 10,
+          limit: 10,
+          partner_code: 0,
+        })
+        this.values = result.data
+        this.datapresent = false
+        this.totalPassengers = parseInt(result.records);
+        this.numberOfPages = result.pages;
+      } catch (e) {
+        console.log(e)
+        this.nodata = true
+        this.items = true
+            }
             },
             checktype(val) {
               if(val == true){
@@ -161,6 +186,24 @@
                 return 'Inactive'
               }
             },
+            convertDate2(value) {
+      function pad(s) {
+        return s < 10 ? '0' + s : s
+      }
+      const d = new Date(value)
+      if (value == null) {
+        return '--'
+      } else {
+        // return [pad(d.getDate()), pad(d.getMonth() + 1), d.getFullYear()].join(
+        //   '-'
+        // )
+        var str = value
+        var res = str.replace("T", " ").replace("Z","").replace(" ", "T");
+
+        var n = res.toLocaleString()
+        return moment(n).format('DD-MM-YYYY');
+      }
+    },
             checkifnull(val) {
               if(val == null){
                 return '--'
@@ -177,42 +220,6 @@
                 return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase()
               }
             },
-            async filterval() {
-              this.loaded = false
-              if(this.checkbox == true){
-                try {
-        this.$axios.setHeader(
-          'Authorization',
-          'bearer ' + this.$store.state.sessionStorage.token
-        )
-        const result = await this.$axios.$get('/admin/users/access/user/get/ALL')
-        this.values = result
-        this.loaded = true
-        this.datapresent = false
-      } catch (e) {
-        console.log(e)
-        this.loaded = true
-        this.nodata = true
-        this.items = true
-      }
-              }else{
-                try {
-        this.$axios.setHeader(
-          'Authorization',
-          'bearer ' + this.$store.state.sessionStorage.token
-        )
-        const result = await this.$axios.$get('/admin/users/access/user/get/true')
-        this.values = result
-        this.loaded = true
-        this.datapresent = false
-      } catch (e) {
-        console.log(e)
-        this.loaded = true
-        this.nodata = true
-        this.items = true
-      }
-              }
-            }
             
 
         }

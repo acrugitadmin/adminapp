@@ -1,7 +1,16 @@
 <template>
   <v-layout>
     <v-flex>
-      <h1 class="headline mb-5 mt-5 font-weight-light">List Of Subscribers</h1>
+      <!-- <h1 class="headline mb-5 mt-5 font-weight-light">List Of Subscribers</h1> -->
+
+      <v-row>
+        <v-col class="d-flex" cols="12" sm="6">
+          <h1 class="headline mb-5 mt-5 font-weight-light">List Of Subscribers</h1>
+        </v-col>
+        <v-col><div class="float-right "><v-container fluid>
+          <v-checkbox v-model="checkbox" @change="filterarray" label="Show Subscriptions Expired"></v-checkbox>
+      </v-container></div></v-col>
+      </v-row>
 
       <div v-if="datapresent">
         <h3 class="mt-5 font-weight-light">
@@ -33,13 +42,14 @@
         <br />
       </v-col>
 
-      <v-card v-if="test">
+      <div v-if="hidetable"><v-card v-if="test">
         <v-card-title>
           <v-text-field
             v-model="search"
             append-icon="mdi-magnify"
-            label="Search"
+            label="Search By Name"
             single-line
+            @input="globalsearch"
             hide-details
           ></v-text-field>
         </v-card-title>
@@ -48,16 +58,17 @@
           loading-text="Loading... Please wait"
           :headers="headers"
           :items="test"
-          :search="search"
           item-key="_id"
           :single-select="singleSelect"
           :page.sync="page"
           :items-per-page="itemsPerPage"
-          :footer-props="{ 'items-per-page-options': [10, 20, -1] }"
+          :footer-props="{ 'items-per-page-options': [10] }"
           class="elevation-1"
           :loading="isLoading"
           @page-count="pageCount = $event"
           @input="call"
+          :options.sync="options"
+          :server-items-length="totalsubscribers"
         >
           <template v-slot:item.name="{ item }">
             {{ nameCheck(item.name)}}
@@ -82,6 +93,9 @@
           </template>
           <template v-slot:item.last_login="{ item }">
             {{ convertDate2(item.last_login) }}
+          </template>
+          <template v-slot:item.subscription_expiry="{ item }">
+            {{ convertDate2(item.subscription_expiry) }}
           </template>
           <template v-slot:item.kyc_verified="{ item }">
             <div :class="getColor(item.kyc_verified)">{{
@@ -146,6 +160,126 @@
           </template>
         </v-data-table>
       </v-card>
+      </div>
+
+      <div v-if="!hidetable">
+        <v-card v-if="test">
+          <v-card-title>
+            <v-text-field
+              v-model="search"
+              append-icon="mdi-magnify"
+              label="Search"
+              single-line
+              hide-details
+            ></v-text-field>
+          </v-card-title>
+          <v-data-table
+            v-model="selected"
+            :search="search"
+            loading-text="Loading... Please wait"
+            :headers="headers"
+            :items="test"
+            item-key="_id"
+            :single-select="singleSelect"
+            :page.sync="page"
+            :items-per-page="itemsPerPage"
+            :footer-props="{ 'items-per-page-options': [10, -1] }"
+            class="elevation-1"
+            :loading="isLoading"
+            @page-count="pageCount = $event"
+            @input="call"
+          >
+            <template v-slot:item.name="{ item }">
+              {{ nameCheck(item.name)}}
+            </template>
+            <template v-slot:item.partner_name="{ item }">
+              {{ nameCheck(item.partner_name)}}
+            </template>
+            <template v-slot:item.mobile="{ item }">
+              {{ formno(item.mobile) }}
+            </template>
+            <template v-slot:item.pan="{ item }">
+              {{ formpan(item.pan) }}
+            </template>
+            <template v-slot:item.partner_assisted="{ item }">
+              {{ pill(item.partner_assisted)}}
+            </template>
+            <template v-slot:item.added_on="{ item }">
+              {{ convertDate2(item.added_on) }}
+            </template>
+            <template v-slot:item.modified_on="{ item }">
+              {{ convertDate1(item.modified_on) }}
+            </template>
+            <template v-slot:item.last_login="{ item }">
+              {{ convertDate2(item.last_login) }}
+            </template>
+            <template v-slot:item.subscription_expiry="{ item }">
+              {{ convertDate2(item.subscription_expiry) }}
+            </template>
+            <template v-slot:item.kyc_verified="{ item }">
+              <div :class="getColor(item.kyc_verified)">{{
+                pill(item.kyc_verified)
+              }}</div>
+            </template>
+            <template v-slot:item.info="{ item }">
+              <v-tooltip left>
+                <template v-slot:activator="{ on }">
+                  <v-icon
+                    style="cursor: pointer;"
+                    v-on="on"
+                    @click="infoCalled(item)"
+                  >
+                    mdi-information
+                  </v-icon>
+                </template>
+                <span>Information</span>
+              </v-tooltip>
+            </template>
+            <template v-slot:item.port="{ item }">
+              <v-tooltip left>
+                <template v-slot:activator="{ on }">
+                  <v-icon
+                    style="cursor: pointer;"
+                    v-on="on"
+                    @click="portCalled(item.id)"
+                  >
+                    mdi-account-details
+                  </v-icon>
+                </template>
+                <span>Portfolio</span>
+              </v-tooltip>
+            </template>
+            <template v-slot:item.activity="{ item }">
+              <v-tooltip left>
+                <template v-slot:activator="{ on }">
+                  <v-icon
+                    style="cursor: pointer;"
+                    v-on="on"
+                    @click="actCalled(item.id)"
+                  >
+                    mdi-history
+                  </v-icon>
+                </template>
+                <span>Activity</span>
+              </v-tooltip>
+            </template>
+            <template v-slot:item.piggy="{ item }">
+              <v-tooltip left>
+                <template v-slot:activator="{ on }">
+                  <v-icon
+                    style="cursor: pointer;"
+                    v-on="on"
+                    @click="piggyCalled(item.id)"
+                  >
+                  mdi-view-list
+                  </v-icon>
+                </template>
+                <span>Settings</span>
+              </v-tooltip>
+            </template>
+          </v-data-table>
+        </v-card>
+      </div>
 
       <v-layout row justify-center>
         <v-dialog v-model="dialog" max-width="1200">
@@ -284,14 +418,14 @@ export default {
     Piggy,
   },
 
-  // watch: {
-  //   options: {
-  //     handler() {
-  //       this.getUsers();
-  //     },
-  //   },
-  //   deep: true,
-  // },
+  watch: {
+    options: {
+      handler() {
+        this.getUsers();
+      },
+    },
+    deep: true,
+  },
 
   asyncData({ params, store }) {},
 
@@ -305,9 +439,9 @@ export default {
       activity: false,
       piggy: false,
       isLoading: true,
-      page: 0,
+      page: 1,
       pageCount: 0,
-      itemsPerPage: 100,
+      itemsPerPage: 10,
       color: '',
       snackbar: false,
       text: '',
@@ -338,6 +472,7 @@ export default {
         { text: 'PAN Number', value: 'pan', class: 'size', sortable: false  },
         { text: 'Added On', value: 'added_on', class: 'size', sortable: false  },
         { text: 'Last Login', value: 'last_login', class: 'size', sortable: false  },
+        { text: 'Expiry Date', value: 'subscription_expiry', class: 'size', sortable: false  },
         { text: 'Partner Name', value: 'partner_name', class: 'size', sortable: false  },
         { text: 'Invite Status', value: 'invite_status', class: 'size', sortable: false  },
         {
@@ -372,7 +507,14 @@ export default {
       showpiggy: null,
       datapresent: true,
       nodata: null,
-      linkval: null
+      linkval: null,
+      checkbox: false,
+      kycfil: null,
+      statusfil: null,
+      options: {},
+      totalsubscribers: null,
+      search_code: null,
+      hidetable: true
     }
   },
 
@@ -381,6 +523,9 @@ export default {
   },
   methods: {
     async check(store, commit) {
+      this.$store.commit('sessionStorage/setPartnerCode', null)
+      this.$store.commit('sessionStorage/setValueForCall', false)
+      
       if (this.$store.state.sessionStorage.partner_code_admin == null) {
         this.linkval = null
       } else {
@@ -406,16 +551,17 @@ export default {
         if(this.$store.state.sessionStorage.call_partner == true) {
           const usersList = await this.$axios.$post('/admin/partner/mysubscribers', {
           offset: 0,
-          limit: 500,
-          kyc: this.$store.state.sessionStorage.kyc,
-          invite_status: this.$store.state.sessionStorage.invite,
+          limit: 5000,
+          kyc: null,
+          invite_status: null,
           partner_code: this.$store.state.sessionStorage.partner_code_admin,
           link: this.$store.state.sessionStorage.link
         })
         if (usersList) {
           this.datapresent = false
         } 
-        this.test = usersList
+        this.test = usersList.result
+        this.totalsubscribers = parseInt(usersList.records)
         this.info = false
         this.piggy = false
         this.activity = false
@@ -427,15 +573,16 @@ export default {
         } else { 
         const usersList = await this.$axios.$post('/admin/users/getUsers', {
           offset: 0,
-          limit: 500,
-          kyc: this.$store.state.sessionStorage.kyc,
-          invite_status: this.$store.state.sessionStorage.invite,
+          limit: 10,
+          kyc: null,
+          invite_status: null,
           link: this.$store.state.sessionStorage.link
         })
         if (usersList) {
           this.datapresent = false
         } 
-        this.test = usersList
+        this.test = usersList.result
+        this.totalsubscribers = parseInt(usersList.records)
         this.info = false
         this.piggy = false
         this.activity = false
@@ -467,11 +614,11 @@ export default {
         console.log(e)
       }
       this.linkval = null
-      this.$store.commit('sessionStorage/setLink', null)
-      this.$store.commit('sessionStorage/setPartnerCode', null)
-      this.$store.commit('sessionStorage/setValueForCall', false)
-      this.$store.commit('sessionStorage/setKyc', null)
-      this.$store.commit('sessionStorage/setInvite', null)
+      // this.$store.commit('sessionStorage/setLink', null)
+      // this.$store.commit('sessionStorage/setPartnerCode', null)
+      // this.$store.commit('sessionStorage/setValueForCall', false)
+      // this.$store.commit('sessionStorage/setKyc', null)
+      // this.$store.commit('sessionStorage/setInvite', null)
     },
     call() {
       this.selectedUser = JSON.stringify(this.selected)
@@ -680,23 +827,200 @@ export default {
       this.check()
     },
     async getUsers() {
-      try {
+
+      
+              this.loaded = true
+              const { page, itemsPerPage } = this.options;
+              let pageNumber = page - 1;     
+                if(pageNumber == -1){
+                  pageNumber = 0
+                  this.page = 0
+                }else{
+
+
+                  if(this.$store.state.sessionStorage.call_partner == true) {
+                    this.$axios.setHeader(
+          'Authorization',
+          'bearer ' + this.$store.state.sessionStorage.token
+        )
+          const usersList = await this.$axios.$post('/admin/partner/mysubscribers', {
+          offset: 0,
+          limit: 5000,
+          kyc: null,
+          invite_status: null,
+          partner_code: this.$store.state.sessionStorage.partner_code_admin,
+          link: this.$store.state.sessionStorage.link
+        })
+        if (usersList) {
+          this.datapresent = false
+        } 
+        this.test = usersList.result
+        this.totalsubscribers = parseInt(usersList.records)
+        this.info = false
+        this.piggy = false
+        this.activity = false
+        this.port = false
+
+
+        this.isLoading = false
+
+        } else { 
+          this.$axios.setHeader(
+          'Authorization',
+          'bearer ' + this.$store.state.sessionStorage.token
+        )
+        const nextPage = await this.$axios.$post('/admin/users/getUsers', {
+          offset: pageNumber * 10,
+          limit: 10,
+          kyc: null,
+          invite_status: null,
+          link: this.$store.state.sessionStorage.link
+        })
+        this.test = nextPage.result
+        this.totalsubscribers = parseInt(nextPage.records)
+        this.isLoading = false
+
+        this.info = false
+        this.piggy = false
+        this.activity = false
+        this.port = false
+
+
+        this.isLoading = false
+
+        }
+
+      // try {
+      //   this.$axios.setHeader(
+      //     'Authorization',
+      //     'bearer ' + this.$store.state.sessionStorage.token
+      //   )
+      //   const nextPage = await this.$axios.$post('/admin/users/getUsers', {
+      //     offset: pageNumber * 10,
+      //     limit: 10,
+      //   })
+      //   this.test = nextPage
+      //   this.isLoading = false
+        
+      // } catch (e) {
+      //   this.error = e.response.data.message
+      //   console.log(e)
+      // }
+    }
+    // this.$store.commit('sessionStorage/setLink', null)
+    //   this.$store.commit('sessionStorage/setPartnerCode', null)
+    //   this.$store.commit('sessionStorage/setValueForCall', false)
+    //   this.$store.commit('sessionStorage/setKyc', null)
+    //   this.$store.commit('sessionStorage/setInvite', null)
+    },
+
+    async globalsearch() {
+      if(this.$store.state.sessionStorage.call_partner == true) {
+        this.search_code = this.$store.state.sessionStorage.partner_code_admin
+      }else{
+        this.search_code = '0'
+      }
+      console.log('called', this.search_code)
+      if(this.search.length >= 3) {
+        try{
+          this.$axios.setHeader(
+          'Authorization',
+          'bearer ' + this.$store.state.sessionStorage.token
+        )
+        const usersList = await this.$axios.$post('/admin/partner/mysubscribers/search', {
+          offset: 0,
+          limit: 5000,
+          kyc: null,
+          invite_status: null,
+          partner_code: this.search_code,
+          link: this.$store.state.sessionStorage.link,
+          name: this.search
+        })
+        this.test = usersList.result
+        this.totalsubscribers = parseInt(usersList.records)
+      }catch(error){
+
+      }
+      }else if(this.search.length < 3){
+        this.check()
+
+      }
+
+    },
+
+    async filterarray() {
+      if(this.checkbox == true) {
+        this.hidetable = false
+
+        try {
         this.$axios.setHeader(
           'Authorization',
           'bearer ' + this.$store.state.sessionStorage.token
         )
-        const nextPage = await this.$axios.$post('/users/getUsers', {
-          offset: this.page + 15,
-          limit: 10,
+        if(this.$store.state.sessionStorage.call_partner == true) {
+          const usersList = await this.$axios.$post('/admin/partner/mysubscribers', {
+          offset: 0,
+          limit: 0,
+          kyc: null,
+          invite_status: null,
+          partner_code: this.$store.state.sessionStorage.partner_code_admin,
+          link: this.$store.state.sessionStorage.link
         })
-        this.test = nextPage
+        if (usersList) {
+          this.datapresent = false
+        } 
+        this.test = usersList.result
+        this.totalsubscribers = parseInt(usersList.records)
+        this.info = false
+        this.piggy = false
+        this.activity = false
+        this.port = false
+
+
         this.isLoading = false
-        
+
+        } else { 
+        const usersList = await this.$axios.$post('/admin/users/getUsers', {
+          offset: 0,
+          limit: 0,
+          kyc: null,
+          invite_status: null,
+          link: this.$store.state.sessionStorage.link
+        })
+        if (usersList) {
+          this.datapresent = false
+        } 
+        this.test = usersList.result
+        this.totalsubscribers = parseInt(usersList.records)
+        this.info = false
+        this.piggy = false
+        this.activity = false
+        this.port = false
+
+
+        this.isLoading = false
+
+        }
       } catch (e) {
         this.error = e.response.data.message
+        this.datapresent = false
+        this.nodata = true
         console.log(e)
       }
-    },
+
+        this.test = this.test.filter(function (el) {
+  return el.subscription_expired == true
+         
+});
+ 
+      }else{
+        this.hidetable = true
+        this.check()
+
+      }
+    }
+
+
   },
 }
 </script>

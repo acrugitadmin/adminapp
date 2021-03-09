@@ -266,6 +266,21 @@
                     <small> **Should be .png, .jpg, .pdf less than 5MB</small>
                   </v-col>
                   </v-row>
+
+                  <v-row>
+                    <v-col class="paddingTop">
+                    <h4 class="mb-2 textColor">Select Subscription Pack <span class="starcolor">*</span></h4>
+                    <v-select
+                    v-model="package"
+                    :items="pack"
+                    :rules="drules"
+                    item-text="package_name"
+                    label="Select"
+                    return-object
+                    outlined
+                  ></v-select>
+                  </v-col>
+                  </v-row>
               
             </v-col>
     
@@ -507,7 +522,11 @@
         inset: false,
         partnercode: null,
 
-        loadedvalpan: null
+        loadedvalpan: null,
+        package: null,
+        pack: [],
+        package_idval: null,
+        pack_id: null
       }
     },
     mounted() {
@@ -529,6 +548,16 @@
       } catch(error){
           console.log(error)
       }
+
+      try {
+      const result = await this.$axios.$post(
+          '/admin/partner/packages/get'
+        )
+        this.pack = result.data
+        
+    } catch(error){
+        console.log(error)
+    }
 
       if(this.$store.state.sessionStorage.edit_partner == null){
 
@@ -560,8 +589,10 @@
   this.partner_logo = this.$store.state.sessionStorage.edit_partner.partner_logo
   this.id_proof = this.$store.state.sessionStorage.edit_partner.id_proof
   this.pan_id = this.$store.state.sessionStorage.edit_partner.address_proof
+  this.package = this.$store.state.sessionStorage.edit_partner.package_id 
+  this.package_idval = this.$store.state.sessionStorage.edit_partner.package_id_val
 
-
+  console.log('pack', this.package.id)
 
 }
   
@@ -733,6 +764,13 @@
   
     },
        async called() {
+         if(!this.package.id) {
+           this.pack_id = this.package_idval
+           console.log('undef', this.package_idval)
+         }else{
+           this.pack_id = this.package.id
+         }
+         console.log('called', this.pack_id)
           if (this.select == 'INDIVIDUAL') {
             this.company = null
           } else {
@@ -769,7 +807,7 @@
           try {
           const result = await this.$axios.$post(
             '/admin/partner/partner/update', {firstname: this.name, lastname: this.lastname, company_name: this.company, business_type: this.select.state, partner_type: this.partnerType.value, partner_prefix: this.partprefix,
-            partner_logo: this.logo_id, mobile: this.phone, email: this.email, address: {address: this.address}, partner_city: this.city, partner_state: this.state, pincode: this.pin, arn_number: this.arn, partner_gst: this.gst, id_proof: this.aadhaar_id, address_proof: this.pan_id, arn_certificate: this.arn_id, pan: this.pan, super_distributor: this.checkbox1, assistance_allowed: this.isassisted, extended_partner: this.isextended, partner_code: this.partnercode}
+            partner_logo: this.logo_id, mobile: this.phone, email: this.email, address: {address: this.address}, partner_city: this.city, partner_state: this.state, pincode: this.pin, arn_number: this.arn, partner_gst: this.gst, id_proof: this.aadhaar_id, address_proof: this.pan_id, arn_certificate: this.arn_id, pan: this.pan, super_distributor: this.checkbox1, assistance_allowed: this.isassisted, extended_partner: this.isextended, partner_code: this.partnercode, package_id: this.pack_id}
           )
           this.values = result
           this.snackbar = true

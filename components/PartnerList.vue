@@ -356,6 +356,10 @@
                 <h4 class="mb-2">ARN Number</h4>
                 <h3 v-if="!detail.arn_number" class="font-weight-light mb-3">-----</h3>
                 <h3 class="font-weight-light mb-3">{{detail.arn_number}}</h3>
+
+                <h4 class="mb-2">Subscription Package</h4>
+                <h3 v-if="!detail.partner_code" class="font-weight-light mb-3">-----</h3>
+                <h3 class="font-weight-light mb-3">{{detail.package_id}}</h3>
       
                 <a :href="link2" target="_blank" class="download" download><h4 class="mb-2">
                   ARN Certificate
@@ -751,7 +755,7 @@ export default {
         } else { 
       this.$store.commit('sessionStorage/setValueForCall', true)
       this.$store.commit('sessionStorage/setPartnerCode', val.partner_code)
-      this.$router.push({ path: '/' })
+      this.$router.push({ path: '/subscriberslisted' })
         }
       }
     },

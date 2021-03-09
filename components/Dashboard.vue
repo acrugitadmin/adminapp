@@ -582,7 +582,7 @@ export default {
         this.text = 'Sorry, You Do Not Have Permission To View This'
         this.color = 'red'
       } else { 
-      this.$router.push({ path: '/' })
+      this.$router.push({ path: '/subscriberskycdone' })
       }
       }
     },
@@ -603,7 +603,7 @@ export default {
         this.text = 'Sorry, You Do Not Have Permission To View This'
         this.color = 'red'
       } else { 
-      this.$router.push({ path: '/' })
+      this.$router.push({ path: '/subscriberskycfalse' })
       }
       }
     },
@@ -624,7 +624,7 @@ export default {
         this.text = 'Sorry, You Do Not Have Permission To View This'
         this.color = 'red'
       } else { 
-      this.$router.push({ path: '/' })
+      this.$router.push({ path: '/subscribersinvitefalse' })
       }
       }
     },
@@ -645,7 +645,7 @@ export default {
         this.text = 'Sorry, You Do Not Have Permission To View This'
         this.color = 'red'
       } else { 
-      this.$router.push({ path: '/' })
+      this.$router.push({ path: '/subscribersinvitetrue' })
       }
       }
     },

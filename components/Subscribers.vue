@@ -1,7 +1,16 @@
 <template>
   <v-layout>
     <v-flex>
-      <h1 class="headline mb-5 mt-5 font-weight-light">My Subscribers</h1>
+      <!-- <h1 class="headline mb-5 mt-5 font-weight-light">My Subscribers</h1> -->
+
+      <v-row>
+        <v-col class="d-flex" cols="12" sm="6">
+          <h1 class="headline mb-5 mt-5 font-weight-light">My Subscribers</h1>
+        </v-col>
+        <v-col><div class="float-right "><v-container fluid>
+          <v-checkbox v-model="checkbox" @change="filterarray" label="Show Subscriptions Expired"></v-checkbox>
+      </v-container></div></v-col>
+      </v-row>
 
       <div v-if="datapresent">
         <h3 class="mt-5 font-weight-light">
@@ -53,7 +62,7 @@
           :single-select="singleSelect"
           :page.sync="page"
           :items-per-page="itemsPerPage"
-          :footer-props="{ 'items-per-page-options': [100, 200, -1] }"
+          :footer-props="{ 'items-per-page-options': [10, -1] }"
           class="elevation-1"
           :loading="isLoading"
           @page-count="pageCount = $event"
@@ -76,6 +85,9 @@
           </template>
           <template v-slot:item.last_login="{ item }">
             {{ convertDate2(item.last_login) }}
+          </template>
+          <template v-slot:item.subscription_expiry="{ item }">
+            {{ convertDate2(item.subscription_expiry) }}
           </template>
           <template v-slot:item.mode="{ item }">
             <p v-if="!modeuser">{{item.mode}}</p>
@@ -393,7 +405,7 @@ export default {
       isLoading: true,
       page: 0,
       pageCount: 0,
-      itemsPerPage: 100,
+      itemsPerPage: 10,
       color: '',
       snackbar: false,
       text: '',
@@ -428,6 +440,7 @@ export default {
         { text: 'PAN Number', value: 'pan', class: 'size', sortable: false },
         { text: 'Added On', value: 'added_on', class: 'size', sortable: false  },
         { text: 'Last Login', value: 'last_login', class: 'size', sortable: false },
+        { text: 'Expiry Date', value: 'subscription_expiry', class: 'size', sortable: false  },
         {
           text: 'KYC Status',
           value: 'kyc_verified',
@@ -482,6 +495,7 @@ export default {
         v => (v && v.length == 4) || "This field must be equal to 4 digits"
       ],
       requestid: null,
+      checkbox: false
     }
   },
 
@@ -520,7 +534,7 @@ export default {
         )
         const usersList = await this.$axios.$post('/admin/partner/mysubscribers', {
           offset: 0,
-          limit: 500,
+          limit: 0,
           kyc: this.$store.state.sessionStorage.kyc,
           partner_code: this.checkcode,
           invite_status: this.$store.state.sessionStorage.invite,
@@ -531,7 +545,7 @@ export default {
         if (usersList) {
           this.datapresent = false
         } 
-        this.test = usersList
+        this.test = usersList.result
         this.info = false
         this.piggy = false
         this.activity = false
@@ -974,7 +988,20 @@ checkifsame(val) {
   }else{
     return true
   }
-}
+},
+
+filterarray() {
+      if(this.checkbox == true) {
+        this.test = this.test.filter(function (el) {
+  return el.subscription_expired == true
+         
+});
+ 
+      }else{
+        this.check()
+
+      }
+    }
 
   },
 }

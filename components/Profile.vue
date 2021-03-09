@@ -30,19 +30,23 @@
           <h4 class="mb-2 black--text">Email</h4>
           <h3 class="font-weight-light black--text mb-3">{{ emailcheck(values.email) }}</h3>
         </v-col>
-      </v-row>
-      <v-row v-if="values">
         <v-col>
           <h4 class="mb-2 black--text">City</h4>
           <h3 v-if="!values.address.city_name" class="font-weight-light mb-3">---</h3>
           <h3 class="font-weight-light black--text mb-3">{{ values.address.city_name }}</h3>
         </v-col>
+      </v-row>
+      <v-row v-if="values">
         <v-col>
           <h4 class="mb-2 black--text">Country</h4>
           <h3 v-if="!values.kycDetails.country" class="font-weight-light mb-3">
             ---
           </h3>
           <h3 class="font-weight-light black--text mb-3">{{ countryval(values.kycDetails.country) }}</h3>
+        </v-col>
+        <v-col>
+          <h4 class="mb-2 black--text">Expiry Date</h4>
+          <h3 class="font-weight-light black--text mb-3">{{convertDate(values.subscription_expiry)}}</h3>
         </v-col>
         <v-col>
           <h4 class="mb-2" style="cursor: pointer;" @click.stop="dialog = true">
@@ -58,6 +62,7 @@
           >Re-Initiate KYC</v-btn
         >
         </v-col>
+        <v-col></v-col>
       </v-row>
 
       <v-row v-if="values">

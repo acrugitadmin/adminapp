@@ -118,14 +118,6 @@
             <v-list-item-title style="font-size: 14px;">List Of Users</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
-        <!-- <v-list-item v-if="role == 'superadmin'" router exact to="/subscriptionexp">
-          <v-list-item-action style="margin-right: 10px;">
-            <v-icon color="#92D050">mdi-playlist-remove</v-icon>
-          </v-list-item-action>
-          <v-list-item-content>
-            <v-list-item-title style="font-size: 14px;">Subscription Expired</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item> -->
         <div v-if="role != 'partner'"><v-list-item v-if="showchangepassword" router exact to="/changepassword">
           <v-list-item-action style="margin-right: 10px;">
             <v-icon color="#92D050">mdi-key-minus</v-icon>
